@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>賽博木魚・功德圓滿</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 圖示 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -100px) scale(1.4);
+      }
+    }
+    .float-text {
+      position: absolute;
+      animation: floatUp 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      pointer-events: none;
+      user-select: none;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .muyu-active {
+      transform: scale(0.92);
+      filter: drop-shadow(0 0 25px rgba(245, 158, 11, 0.6));
+    }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen flex flex-col items-center justify-between p-4 selection:bg-amber-500 selection:text-black font-sans">
+
+  <!-- 頂部資訊列 -->
+  <header class="w-full max-w-md flex justify-between items-center pt-2">
+    <div>
+      <span class="text-xs tracking-widest text-neutral-500 uppercase">當前果位</span>
+      <h2 id="rank-badge" class="text-lg font-bold text-amber-400 flex items-center gap-1.5">
+        <i class="fa-solid fa-seedling"></i> 初入空門
+      </h2>
+    </div>
+    <div class="flex gap-2">
+      <button id="sound-toggle" class="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-300 hover:text-amber-400 transition" title="音效切換">
+        <i class="fa-solid fa-volume-high"></i>
+      </button>
+      <button id="reset-btn" class="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 hover:text-rose-400 transition" title="歸零重練">
+        <i class="fa-solid fa-rotate-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 中間主要敲擊互動區 -->
+  <main class="w-full max-w-md flex flex-col items-center justify-center my-auto relative">
+    
+    <!-- 功德計數面板 -->
+    <div class="text-center mb-6">
+      <p class="text-xs uppercase tracking-widest text-neutral-400 mb-1">功德累計總額</p>
+      <div class="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 font-mono" id="merit-count">
+        0
+      </div>
+    </div>
+
+    <!-- 浮動文字生成容器 -->
+    <div id="float-container" class="relative w-full flex justify-center items-center">
+      
+      <!-- 木魚圖形本體 (SVG) -->
+      <button id="muyu-btn" class="relative group cursor-pointer transition-transform duration-75 outline-none select-none active:scale-95" aria-label="敲擊木魚">
+        <svg class="w-64 h-64 md:w-72 md:h-72 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 木魚主體漸層 -->
+          <defs>
+            <radialGradient id="muyuGrad" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#404040"/>
+              <stop offset="60%" stop-color="#262626"/>
+              <stop offset="100%" stop-color="#171717"/>
+            </radialGradient>
+            <linearGradient id="goldStroke" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#b45309"/>
+            </linearGradient>
+          </defs>
+          <!-- 木魚主身軀外殼 -->
+          <path d="M100 20C55 20 25 55 25 105C25 155 60 180 100 180C140 180 175 155 175 105C175 55 145 20 100 20Z" fill="url(#muyuGrad)" stroke="url(#goldStroke)" stroke-width="4"/>
+          <!-- 木魚魚眼與敲擊縫隙雕紋 -->
+          <circle cx="65" cy="85" r="14" fill="#171717" stroke="#fbbf24" stroke-width="3"/>
+          <circle cx="65" cy="85" r="6" fill="#fbbf24"/>
+          <path d="M70 125 C 100 145, 140 135, 160 100" stroke="#fbbf24" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="158" cy="98" r="8" fill="#fbbf24"/>
+        </svg>
+      </button>
+
+    </div>
+
+    <p class="text-xs text-neutral-500 mt-5 tracking-wide">點擊木魚或敲擊鍵盤 <kbd class="px-2 py-0.5 bg-neutral-900 border border-neutral-700 rounded text-neutral-300 font-mono">SPACE</kbd> 發送福報</p>
+  </main>
+
+  <!-- 底部操作控制區 -->
+  <footer class="w-full max-w-md flex flex-col gap-3 pb-4">
+    <!-- 自訂飄字快速切換按鈕 -->
+    <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
+      <button class text-btn px-3 py-1.5 rounded-full bg-neutral-900 border border-amber-500/40 text-amber-400 font-medium hover:bg-neutral-800 transition whitespace-nowrap active:scale-95" data-text="功德 +1">功德 +1</button>
+      <button class="text-btn px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-amber-300 hover:bg-neutral-800 transition whitespace-nowrap active:scale-95" data-text="期末歐趴 🎯">期末歐趴 🎯</button>
+      <button class="text-btn px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-amber-300 hover:bg-neutral-800 transition whitespace-nowrap active:scale-95" data-text="暴躁 -1 🧘">暴躁 -1 🧘</button>
+      <button class="text-btn px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-amber-300 hover:bg-neutral-800 transition whitespace-nowrap active:scale-95" data-text="薪水 +1000 💰">薪水 +1000 💰</button>
+    </div>
+
+    <!-- 自訂文字輸入 & 自動敲擊按鈕 -->
+    <div class="flex gap-2">
+      <div class="relative flex-1">
+        <input id="custom-text-input" type="text" maxlength="12" placeholder="自訂祈福文字..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition">
+      </div>
+      <button id="auto-btn" class="px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 font-semibold text-sm text-neutral-300 hover:text-amber-400 hover:border-amber-500/50 transition flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-bolt"></i> 自動誦經
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    // 1. 核心狀態
+    let count = parseInt(localStorage.getItem('muyu_count') || '0', 10);
+    let currentText = '功德 +1';
+    let isSoundOn = true;
+    let autoInterval = null;
+
+    // 2. 音效系統 (使用純 Web Audio API 模擬沉悶木魚音效)
+    let audioCtx = null;
+    function playMuyuSound() {
+      if (!isSoundOn) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        // 模擬木魚基本頻率與打擊瞬態
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.12);
+
+        gain.gain.setValueAtTime(1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {
+        console.error("Audio playback error:", e);
+      }
+    }
+
+    // 3. 果位稱號等級系統
+    const RANKS = [
+      { min: 0, title: '初入空門', icon: 'fa-seedling' },
+      { min: 50, title: '賽博沙彌', icon: 'fa-feather' },
+      { min: 200, title: '靜心羅漢', icon: 'fa-fire' },
+      { min: 500, title: '得道高僧', icon: 'fa-sun' },
+      { min: 1000, title: '賽博佛陀', icon: 'fa-crown' }
+    ];
+
+    function updateRank() {
+      const currentRank = [...RANKS].reverse().find(r => count >= r.min) || RANKS[0];
+      const rankBadge = document.getElementById('rank-badge');
+      rankBadge.innerHTML = `<i class="fa-solid ${currentRank.icon}"></i> ${currentRank.title}`;
+    }
+
+    // 4. 浮動文字生成動畫
+    const container = document.getElementById('float-container');
+    function createFloatingText() {
+      const el = document.createElement('div');
+      el.className = 'float-text text-amber-300 text-xl font-bold tracking-wider';
+      el.innerText = currentText;
+
+      // 隨機在木魚中心附近產生些許微幅水平位移
+      const randomOffset = (Math.random() - 0.5) * 60;
+      el.style.left = `calc(50% + ${randomOffset}px)`;
+      el.style.top = '30%';
+
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 900);
+    }
+
+    // 5. 敲擊核心邏輯
+    const muyuBtn = document.getElementById('muyu-btn');
+    const meritDisplay = document.getElementById('merit-count');
+
+    function hitMuyu() {
+      count++;
+      meritDisplay.textContent = count.toLocaleString();
+      localStorage.setItem('muyu_count', count);
+
+      // 動畫反饋
+      muyuBtn.classList.add('muyu-active');
+      setTimeout(() => muyuBtn.classList.remove('muyu-active'), 80);
+
+      playMuyuSound();
+      createFloatingText();
+      updateRank();
+    }
+
+    // 點擊事件與鍵盤支援
+    muyuBtn.addEventListener('click', hitMuyu);
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+        e.preventDefault();
+        hitMuyu();
+      }
+    });
+
+    // 6. 音效開關切換
+    const soundToggle = document.getElementById('sound-toggle');
+    soundToggle.addEventListener('click', () => {
+      isSoundOn = !isSoundOn;
+      soundToggle.innerHTML = isSoundOn 
+        ? '<i class="fa-solid fa-volume-high"></i>' 
+        : '<i class="fa-solid fa-volume-xmark text-neutral-500"></i>';
+    });
+
+    // 7. 快捷飄字切換
+    const textBtns = document.querySelectorAll('.text-btn');
+    const customInput = document.getElementById('custom-text-input');
+
+    textBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        textBtns.forEach(b => {
+          b.classList.remove('border-amber-500/40', 'text-amber-400');
+          b.classList.add('border-neutral-800', 'text-neutral-400');
+        });
+        btn.classList.remove('border-neutral-800', 'text-neutral-400');
+        btn.classList.add('border-amber-500/40', 'text-amber-400');
+        
+        currentText = btn.dataset.text;
+        customInput.value = '';
+      });
+    });
+
+    // 自訂輸入框更新
+    customInput.addEventListener('input', (e) => {
+      if (e.target.value.trim() !== '') {
+        currentText = e.target.value.trim();
+        textBtns.forEach(b => {
+          b.classList.remove('border-amber-500/40', 'text-amber-400');
+          b.classList.add('border-neutral-800', 'text-neutral-400');
+        });
+      }
+    });
+
+    // 8. 自動誦經 (Auto 模式)
+    const autoBtn = document.getElementById('auto-btn');
+    autoBtn.addEventListener('click', () => {
+      if (autoInterval) {
+        clearInterval(autoInterval);
+        autoInterval = null;
+        autoBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> 自動誦經';
+        autoBtn.classList.remove('bg-amber-500', 'text-black', 'border-amber-400');
+        autoBtn.classList.add('bg-neutral-900', 'text-neutral-300');
+      } else {
+        hitMuyu();
+        autoInterval = setInterval(hitMuyu, 400); // 每秒 2.5 次
+        autoBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停誦經';
+        autoBtn.classList.remove('bg-neutral-900', 'text-neutral-300');
+        autoBtn.classList.add('bg-amber-500', 'text-black', 'border-amber-400');
+      }
+    });
+
+    // 9. 歸零重練功能
+    const resetBtn = document.getElementById('reset-btn');
+    resetBtn.addEventListener('click', () => {
+      if (confirm('確定要放下一切執念，功德歸零重練嗎？')) {
+        count = 0;
+        localStorage.setItem('muyu_count', '0');
+        meritDisplay.textContent = '0';
+        updateRank();
+      }
+    });
+
+    // 初始化載入
+    meritDisplay.textContent = count.toLocaleString();
+    updateRank();
+  </script>
+</body>
+</html>
